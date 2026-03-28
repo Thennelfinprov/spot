@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpotGiraffe ATS — Admin Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#04060f;--bg2:#070a18;--sur:#0c1028;--card:#0f1530;--card2:#131a38;
+  --bor:#1c2650;--bor2:#253070;--gold:#c9a84c;--gold2:#f0d080;--gold3:#8a6820;
+  --acc:#3b82f6;--acc2:#60a5fa;--tx:#e8eeff;--tx2:#a8b4d8;--mu:#5a6890;
+  --red:#f43f5e;--green:#10b981;--warn:#f59e0b;
+  --glass:rgba(15,21,48,.75);--shadow:0 24px 64px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+a{color:var(--acc2);text-decoration:none}
+
+/* ── Login screen ── */
+#loginScreen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:20px;
+  background:radial-gradient(ellipse at 30% 40%,rgba(201,168,76,.06),transparent 60%),
+             radial-gradient(ellipse at 70% 70%,rgba(59,130,246,.05),transparent 60%);
+}
+.login-box{
+  background:var(--sur);border:1px solid var(--bor);border-radius:20px;
+  padding:44px 38px;width:400px;max-width:95vw;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.login-box::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,.05),transparent);pointer-events:none}
+.lb-logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;margin-bottom:4px}
+.lb-logo .g{color:var(--gold)}
+.lb-sub{font-size:.78rem;color:var(--mu);margin-bottom:28px;display:flex;align-items:center;gap:6px}
+.lb-badge{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.25);color:#fb7185;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.06em}
+.lb-field{margin-bottom:14px}
+.lb-field label{display:block;font-size:.65rem;font-weight:700;color:var(--mu);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.lb-field input{width:100%;background:var(--card2);border:1.5px solid var(--bor);border-radius:8px;padding:11px 14px;color:var(--tx);font-family:'Outfit',sans-serif;font-size:.88rem;outline:none;transition:border .2s}
+.lb-field input:focus{border-color:var(--gold3);box-shadow:0 0 0 3px rgba(201,168,76,.08)}
+#loginErr{color:var(--red);font-size:.72rem;margin-bottom:10px;min-height:16px}
+.lb-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold3),var(--gold));border:none;border-radius:9px;font-family:'Playfair Display',serif;font-weight:700;font-size:.95rem;color:#0a0800;cursor:pointer;transition:all .2s}
+.lb-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,168,76,.3)}
+
+/* ── Main shell ── */
+#mainShell{display:none;flex-direction:column;min-height:100vh}
+
+/* ── Top bar ── */
+.topbar{
+  height:58px;background:rgba(4,6,15,.95);
+  border-bottom:1px solid var(--bor);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;position:sticky;top:0;z-index:200;
+  backdrop-filter:blur(20px);
+}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.35}
+.tb-logo{font-family:'Playfair Display',serif;font-weight:900;font-size:1.2rem}
+.tb-logo .g{color:var(--gold)}.tb-logo .badge{font-family:'Fira Code',monospace;font-size:.55rem;font-weight:400;color:#fb7185;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);border-radius:4px;padding:2px 7px;margin-left:8px;letter-spacing:.06em}
+.tb-right{display:flex;align-items:center;gap:12px}
+.tb-url{font-family:'Fira Code',monospace;font-size:.68rem;color:var(--mu);background:var(--card);border:1px solid var(--bor);border-radius:6px;padding:4px 10px}
+.tb-btn{padding:6px 14px;border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;border:1px solid var(--bor);background:var(--card);color:var(--tx);transition:all .2s}
+.tb-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── Content layout ── */
+.content{display:flex;flex:1;overflow:hidden;height:calc(100vh - 58px)}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:200px;flex-shrink:0;
+  background:rgba(7,10,24,.9);border-right:1px solid var(--bor);
+  padding:18px 0;overflow-y:auto;
+}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 18px;cursor:pointer;border-radius:0;
+  font-size:.78rem;font-weight:600;color:var(--mu);
+  transition:all .2s;border-left:3px solid transparent;
+  letter-spacing:.02em;
+}
+.sb-item:hover{background:rgba(201,168,76,.05);color:var(--tx2)}
+.sb-item.on{background:rgba(201,168,76,.07);color:var(--gold2);border-left-color:var(--gold)}
+.sb-ico{font-size:.9rem;flex-shrink:0;width:20px;text-align:center}
+.sb-divider{height:1px;background:var(--bor);margin:12px 16px}
+.sb-label{font-size:.58rem;font-weight:700;color:var(--mu);letter-spacing:.1em;padding:6px 18px 3px;text-transform:uppercase}
+
+/* ── Main panel ── */
+.main{flex:1;overflow-y:auto;padding:28px;background:var(--bg2);scrollbar-width:thin;scrollbar-color:var(--bor) transparent}
+.main::-webkit-scrollbar{width:4px}.main::-webkit-scrollbar-thumb{background:var(--bor)}
+
+/* ── Section titles ── */
+.section-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.section-sub{font-size:.78rem;color:var(--mu);margin-bottom:22px}
+.section{display:none}.section.on{display:block;animation:fadeup .2s ease}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Stat cards ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{
+  background:var(--card);border:1px solid var(--bor);border-radius:12px;
+  padding:18px 20px;position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.stat-card:hover{border-color:var(--bor2)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-color,var(--gold));opacity:.6}
+.stat-icon{font-size:1.5rem;margin-bottom:8px}
+.stat-label{font-size:.67rem;font-weight:700;color:var(--mu);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--tx);line-height:1}
+.stat-sub{font-size:.7rem;color:var(--mu);margin-top:4px}
+
+/* ── Table ── */
+.tbl-wrap{background:var(--card);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:22px}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bor)}
+.tbl-head h3{font-family:'Playfair Display',serif;font-size:.95rem}
+.tbl-search{background:var(--card2);border:1px solid var(--bor);border-radius:7px;padding:6px 12px;color:var(--tx);font-size:.78rem;font-family:'Outfit',sans-serif;outline:none;width:200px}
+.tbl-search:focus{border-color:var(--gold3)}
+table{width:100%;border-collapse:collapse}
+th{font-size:.62rem;font-weight:700;color:var(--mu);letter-spacing:.09em;text-transform:uppercase;padding:10px 16px;background:rgba(7,10,24,.5);text-align:left;border-bottom:1px solid var(--bor)}
+td{padding:11px 16px;border-bottom:1px solid rgba(28,38,80,.5);font-size:.78rem;color:var(--tx2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,168,76,.025)}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:100px;font-size:.65rem;font-weight:700;letter-spacing:.04em}
+.badge.green{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:var(--green)}
+.badge.red{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--red)}
+.badge.gold{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold2)}
+.badge.blue{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:var(--acc2)}
+.badge.mu{background:rgba(90,104,144,.1);border:1px solid rgba(90,104,144,.2);color:var(--mu)}
+
+/* ── Action buttons ── */
+.act-btn{padding:4px 10px;border-radius:5px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid;font-family:'Outfit',sans-serif;transition:all .2s;margin-right:4px}
+.act-btn.block{border-color:rgba(245,158,11,.3);color:var(--warn);background:rgba(245,158,11,.06)}
+.act-btn.block:hover{background:rgba(245,158,11,.15)}
+.act-btn.unblock{border-color:rgba(16,185,129,.3);color:var(--green);background:rgba(16,185,129,.06)}
+.act-btn.unblock:hover{background:rgba(16,185,129,.15)}
+.act-btn.danger{border-color:rgba(244,63,94,.3);color:var(--red);background:rgba(244,63,94,.06)}
+.act-btn.danger:hover{background:rgba(244,63,94,.15)}
+.act-btn.info{border-color:rgba(59,130,246,.3);color:var(--acc2);background:rgba(59,130,246,.06)}
+.act-btn.info:hover{background:rgba(59,130,246,.15)}
+.act-btn.gold{border-color:rgba(201,168,76,.3);color:var(--gold2);background:rgba(201,168,76,.06)}
+.act-btn.gold:hover{background:rgba(201,168,76,.15)}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--bor);border-radius:12px;padding:20px 22px;margin-bottom:16px}
+.card h3{font-family:'Playfair Display',serif;font-size:.9rem;margin-bottom:12px;color:var(--tx)}
+
+/* ── Log entries ── */
+.log-entry{font-family:'Fira Code',monospace;font-size:.68rem;padding:5px 10px;border-bottom:1px solid var(--bor);color:rgba(168,180,216,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-entry:hover{background:rgba(28,38,80,.3);white-space:normal}
+.log-entry .ts{color:var(--mu)}
+.log-entry .act{color:var(--acc2);font-weight:600}
+.log-entry .usr{color:var(--gold2)}
+
+/* ── API tester ── */
+.api-row{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+.api-method{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold2);border-radius:5px;padding:5px 9px;font-size:.68rem;font-weight:700;font-family:'Fira Code',monospace;min-width:52px;text-align:center}
+.api-url{flex:1;background:var(--card2);border:1px solid var(--bor);border-radius:6px;padding:6px 11px;color:var(--tx);font-family:'Fira Code',monospace;font-size:.73rem;outline:none}
+.api-url:focus{border-color:var(--gold3)}
+.api-run{padding:6px 13px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:var(--acc2);border-radius:6px;font-size:.72rem;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;transition:all .2s}
+.api-run:hover{background:rgba(59,130,246,.2)}
+.api-result{background:var(--bg);border:1px solid var(--bor);border-radius:8px;padding:12px;font-family:'Fira Code',monospace;font-size:.7rem;color:rgba(168,180,216,.8);max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;margin-top:8px;display:none}
+
+/* ── Form inline ── */
+.mini-form{display:flex;gap:8px;margin-bottom:12px}
+.mini-input{flex:1;background:var(--card2);border:1px solid var(--bor);border-radius:7px;padding:8px 12px;color:var(--tx);font-family:'Outfit',sans-serif;font-size:.8rem;outline:none}
+.mini-input:focus{border-color:var(--gold3)}
+.mini-btn{padding:8px 16px;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;border:none;transition:all .2s;white-space:nowrap}
+.mini-btn.prim{background:linear-gradient(135deg,var(--gold3),var(--gold));color:#0a0800}
+.mini-btn.prim:hover{box-shadow:0 4px 14px rgba(201,168,76,.3)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--tx);padding:10px 20px;border-radius:8px;font-size:.8rem;font-weight:500;z-index:9999;opacity:0;pointer-events:none;transition:all .3s;border:1px solid var(--bor);box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Confirm modal ── */
+#confirmModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.confirm-box{background:var(--sur);border:1px solid var(--bor);border-radius:14px;padding:28px;max-width:380px;width:94vw;text-align:center;box-shadow:var(--shadow)}
+.confirm-box h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:8px}
+.confirm-box p{font-size:.8rem;color:var(--mu);margin-bottom:20px;line-height:1.6}
+.confirm-btns{display:flex;gap:10px;justify-content:center}
+.cbtn{padding:9px 22px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;border:1px solid var(--bor)}
+.cbtn.ok{background:var(--red);border-color:var(--red);color:#fff}
+.cbtn.cancel{background:var(--card);color:var(--mu)}
+
+/* Responsive */
+@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr)}.sidebar{width:56px}.sb-item span.sb-lbl{display:none}.sidebar .sb-label{display:none}}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="lb-logo">Spot<span class="g">Giraffe</span> <span style="font-size:.95rem;color:var(--mu)">ATS</span></div>
+    <div class="lb-sub">
+      <span class="lb-badge">ADMIN</span>
+      Admin Portal — Restricted Access
+    </div>
+    <div class="lb-field">
+      <label>Backend API URL</label>
+      <input id="apiUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
+    </div>
+    <div class="lb-field">
+      <label>Admin Secret Key</label>
+      <input id="adminKey" type="password" placeholder="Admin key from server.js" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="loginErr"></div>
+    <button class="lb-btn" onclick="doLogin()">🔐 Access Admin Portal</button>
+    <div style="margin-top:16px;font-size:.7rem;color:var(--mu);text-align:center;line-height:1.6">
+      Default key: <code style="color:var(--gold2);background:var(--card);padding:1px 6px;border-radius:3px">spotgiraffe_admin_2024</code><br>
+      Set via <code style="color:var(--acc2)">ADMIN_KEY</code> env var in production
+    </div>
+  </div>
+</div>
+
+<!-- Main Shell -->
+<div id="mainShell">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="tb-logo">Spot<span class="g">Giraffe</span> <span class="badge">ADMIN</span></div>
+      <span id="tbApiUrl" class="tb-url"></span>
+    </div>
+    <div class="tb-right">
+      <span id="tbStatus" style="font-size:.72rem;color:var(--green);font-weight:600"></span>
+      <button class="tb-btn" onclick="refreshAll()">🔄 Refresh</button>
+      <button class="tb-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sb-label">Dashboard</div>
+      <div class="sb-item on" onclick="goSection('overview')" id="nav-overview"><span class="sb-ico">📊</span><span class="sb-lbl">Overview</span></div>
+      <div class="sb-label">Management</div>
+      <div class="sb-item" onclick="goSection('users')" id="nav-users"><span class="sb-ico">👥</span><span class="sb-lbl">Users</span></div>
+      <div class="sb-item" onclick="goSection('blocked')" id="nav-blocked"><span class="sb-ico">🚫</span><span class="sb-lbl">Blocked</span></div>
+      <div class="sb-divider"></div>
+      <div class="sb-label">Tools</div>
+      <div class="sb-item" onclick="goSection('api')" id="nav-api"><span class="sb-ico">⚡</span><span class="sb-lbl">API Test</span></div>
+      <div class="sb-item" onclick="goSection('log')" id="nav-log"><span class="sb-ico">📋</span><span class="sb-lbl">Access Log</span></div>
+      <div class="sb-divider"></div>
+      <div class="sb-item" onclick="window.open('/','_blank')" style="margin-top:4px"><span class="sb-ico">🦒</span><span class="sb-lbl">Open App</span></div>
+    </nav>
+
+    <!-- Main Panel -->
+    <div class="main">
+
+      <!-- ── OVERVIEW ── -->
+      <div class="section on" id="s-overview">
+        <div class="section-title">📊 Dashboard Overview</div>
+        <div class="section-sub" id="lastRefreshed">Loading…</div>
+
+        <div class="stat-grid" id="statGrid">
+          <div class="stat-card" style="--accent-color:var(--gold)"><div class="stat-icon">👥</div><div class="stat-label">Total Users</div><div class="stat-value" id="stTotal">—</div><div class="stat-sub">Registered accounts</div></div>
+          <div class="stat-card" style="--accent-color:var(--green)"><div class="stat-icon">🟢</div><div class="stat-label">Active Today</div><div class="stat-value" id="stToday">—</div><div class="stat-sub">Logged in last 24h</div></div>
+          <div class="stat-card" style="--accent-color:var(--acc2)"><div class="stat-icon">📄</div><div class="stat-label">Saved Resumes</div><div class="stat-value" id="stResumes">—</div><div class="stat-sub">Resumes stored</div></div>
+          <div class="stat-card" style="--accent-color:var(--red)"><div class="stat-icon">🚫</div><div class="stat-label">Blocked</div><div class="stat-value" id="stBlocked">—</div><div class="stat-sub">Suspended accounts</div></div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="card" style="margin-bottom:18px">
+          <h3>Quick Actions</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="act-btn info" onclick="goSection('users')">👥 Manage Users</button>
+            <button class="act-btn gold" onclick="goSection('log')">📋 View Access Log</button>
+            <button class="act-btn info" onclick="goSection('api')">⚡ Test API</button>
+            <button class="act-btn block" onclick="createTestUser()">➕ Create Test User</button>
+          </div>
+        </div>
+
+        <!-- Recent users table -->
+        <div class="tbl-wrap">
+          <div class="tbl-head"><h3>Recent Registrations</h3><button class="act-btn info" onclick="goSection('users')">View All →</button></div>
+          <table id="recentTable">
+            <thead><tr><th>Username</th><th>Registered</th><th>Last Login</th><th>Resume</th><th>Status</th></tr></thead>
+            <tbody id="recentBody"><tr><td colspan="5" style="text-align:center;padding:22px;color:var(--mu)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── USERS ── -->
+      <div class="section" id="s-users">
+        <div class="section-title">👥 All Users</div>
+        <div class="section-sub">Manage all registered accounts</div>
+
+        <div class="card" style="margin-bottom:16px">
+          <h3>Create New User</h3>
+          <div class="mini-form">
+            <input class="mini-input" id="newUname" placeholder="username (3+ chars)">
+            <input class="mini-input" id="newPw" type="password" placeholder="password (4+ chars)">
+            <input class="mini-input" id="newEmail" placeholder="email (optional)">
+            <button class="mini-btn prim" onclick="createUser()">Create</button>
+          </div>
+        </div>
+
+        <div class="tbl-wrap">
+          <div class="tbl-head">
+            <h3>Users (<span id="userCount">0</span>)</h3>
+            <input class="tbl-search" id="userSearch" placeholder="🔍 Search users…" oninput="filterUsers()">
+          </div>
+          <table>
+            <thead><tr><th>#</th><th>Username</th><th>Email</th><th>Registered</th><th>Last Login</th><th>Logins</th><th>Resume</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="usersBody"><tr><td colspan="9" style="text-align:center;padding:22px;color:var(--mu)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── BLOCKED ── -->
+      <div class="section" id="s-blocked">
+        <div class="section-title">🚫 Blocked Users</div>
+        <div class="section-sub">Suspended accounts — click Unblock to restore access</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Username</th><th>Email</th><th>Blocked Since</th><th>Actions</th></tr></thead>
+            <tbody id="blockedBody"><tr><td colspan="4" style="text-align:center;padding:22px;color:var(--mu)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── API TEST ── -->
+      <div class="section" id="s-api">
+        <div class="section-title">⚡ API Tester</div>
+        <div class="section-sub">Test backend endpoints directly from the admin panel</div>
+
+        <div class="card">
+          <h3>Quick Tests</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="act-btn info" onclick="quickTest('GET','/health')">GET /health</button>
+            <button class="act-btn info" onclick="quickTest('GET','/admin/users')">GET /admin/users</button>
+            <button class="act-btn info" onclick="quickTest('GET','/admin/stats')">GET /admin/stats</button>
+            <button class="act-btn info" onclick="quickTest('GET','/admin/log')">GET /admin/log</button>
+          </div>
+          <div id="apiRows">
+            <div class="api-row">
+              <span class="api-method" id="apiMethod">GET</span>
+              <input class="api-url" id="apiEndpoint" value="/admin/stats" placeholder="/admin/endpoint">
+              <button class="api-run" onclick="runApiTest()">Run ▶</button>
+              <button class="api-run" style="background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2);color:var(--gold2)" onclick="toggleMethod()">Toggle Method</button>
+            </div>
+          </div>
+          <div id="apiBody" style="display:none;margin-bottom:8px">
+            <textarea id="apiBodyTxt" style="width:100%;background:var(--bg);border:1px solid var(--bor);border-radius:7px;padding:10px;color:var(--tx);font-family:'Fira Code',monospace;font-size:.72rem;min-height:80px;outline:none;resize:vertical" placeholder='{"key":"value"}'></textarea>
+          </div>
+          <div class="api-result" id="apiResult"></div>
+        </div>
+
+        <div class="card">
+          <h3>Reset User Password</h3>
+          <div class="mini-form">
+            <input class="mini-input" id="rpUser" placeholder="username">
+            <input class="mini-input" id="rpPw" type="password" placeholder="new password">
+            <button class="mini-btn prim" onclick="resetPw()">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LOG ── -->
+      <div class="section" id="s-log">
+        <div class="section-title">📋 Access Log</div>
+        <div class="section-sub">Last 200 server events (newest first)</div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--bor)">
+            <span style="font-size:.75rem;font-weight:600;color:var(--gold2)">ACTIVITY LOG</span>
+            <button class="act-btn info" onclick="loadLog()">Refresh</button>
+          </div>
+          <div id="logContainer" style="max-height:600px;overflow-y:auto">
+            <div style="padding:20px;text-align:center;color:var(--mu);font-size:.78rem">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /content -->
+</div><!-- /mainShell -->
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmMsg">This action cannot be undone.</p>
+    <div class="confirm-btns">
+      <button class="cbtn cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="cbtn ok" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+var API_URL = '', ADMIN_KEY_VAL = '', allUsers = [], curSection = 'overview';
+var apiMethodToggled = false;
+
+// ── Toast ────────────────────────────────────────────────────
+var toastT;
+function toast(msg, dur) {
+  var t = document.getElementById('toast'); if (!t) return;
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, dur || 3000);
+}
+
+// ── Confirm ──────────────────────────────────────────────────
+var confirmCb = null;
+function confirm2(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmModal').style.display = 'flex';
+  confirmCb = cb;
+  document.getElementById('confirmOk').onclick = function () { closeConfirm(); if (confirmCb) confirmCb(); };
+}
+function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; }
+
+// ── API call ──────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = {
+    method, headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY_VAL }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API_URL + path, opts);
+  return r.json();
+}
+
+// ── Login ─────────────────────────────────────────────────────
+async function doLogin() {
+  const url = document.getElementById('apiUrl').value.trim().replace(/\/+$/, '');
+  const key = document.getElementById('adminKey').value.trim();
+  const err = document.getElementById('loginErr');
+  if (!url || !key) { err.textContent = 'Fill in both fields.'; return; }
+  err.textContent = 'Checking…';
+  try {
+    const r = await fetch(url + '/admin/stats', { headers: { 'X-Admin-Key': key } });
+    const d = await r.json();
+    if (!r.ok || d.error) { err.textContent = d.error || 'Invalid key or server error.'; return; }
+    API_URL = url; ADMIN_KEY_VAL = key;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainShell').style.display = 'flex';
+    document.getElementById('tbApiUrl').textContent = url;
+    document.getElementById('tbStatus').textContent = '✅ Connected';
+    refreshAll();
+  } catch (e) {
+    err.textContent = 'Could not reach server at ' + url + '. Is it running?';
+  }
+}
+function doLogout() {
+  API_URL = ''; ADMIN_KEY_VAL = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainShell').style.display = 'none';
+}
+
+// ── Navigation ────────────────────────────────────────────────
+function goSection(id) {
+  document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('on'); });
+  document.querySelectorAll('.sb-item').forEach(function (s) { s.classList.remove('on'); });
+  var sec = document.getElementById('s-' + id);
+  var nav = document.getElementById('nav-' + id);
+  if (sec) sec.classList.add('on');
+  if (nav) nav.classList.add('on');
+  curSection = id;
+  if (id === 'users') loadUsers();
+  else if (id === 'blocked') loadBlocked();
+  else if (id === 'log') loadLog();
+  else if (id === 'overview') loadOverview();
+}
+
+// ── Refresh all ───────────────────────────────────────────────
+function refreshAll() {
+  loadOverview();
+  if (curSection === 'users') loadUsers();
+  else if (curSection === 'blocked') loadBlocked();
+  else if (curSection === 'log') loadLog();
+}
+
+// ── Format helpers ─────────────────────────────────────────────
+function fDate(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function fAgo(iso) {
+  if (!iso) return '—';
+  var diff = Date.now() - new Date(iso);
+  var mins = Math.floor(diff / 60000);
+  if (mins < 2) return 'Just now';
+  if (mins < 60) return mins + 'm ago';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  var days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return fDate(iso);
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const stats = await api('GET', '/admin/stats');
+    if (!stats.totalUsers && stats.totalUsers !== 0) return;
+    document.getElementById('stTotal').textContent = stats.totalUsers;
+    document.getElementById('stToday').textContent = stats.activeToday;
+    document.getElementById('stResumes').textContent = stats.withResume;
+    document.getElementById('stBlocked').textContent = stats.blocked;
+    document.getElementById('lastRefreshed').textContent =
+      'Last refreshed ' + new Date().toLocaleTimeString() + ' · Total logins: ' + stats.totalLogins;
+
+    const users = await api('GET', '/admin/users');
+    if (users.users) {
+      allUsers = users.users;
+      var recent = users.users.slice(0, 8);
+      var tbody = document.getElementById('recentBody');
+      if (!recent.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--mu)">No users yet.</td></tr>'; return; }
+      tbody.innerHTML = recent.map(function (u) {
+        return '<tr>'
+          + '<td style="font-weight:600;color:var(--tx)">@' + u.username + '</td>'
+          + '<td>' + fDate(u.created) + '</td>'
+          + '<td>' + fAgo(u.lastLogin) + '</td>'
+          + '<td>' + (u.hasResume ? '<span class="badge green">✅ Saved</span>' : '<span class="badge mu">Empty</span>') + '</td>'
+          + '<td>' + (u.blocked ? '<span class="badge red">Blocked</span>' : '<span class="badge green">Active</span>') + '</td>'
+          + '</tr>';
+      }).join('');
+    }
+  } catch (e) { toast('⚠ Could not load overview: ' + e.message); }
+}
+
+// ── USERS ─────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    const data = await api('GET', '/admin/users');
+    if (!data.users) { toast('⚠ ' + (data.error || 'Failed to load users')); return; }
+    allUsers = data.users;
+    document.getElementById('userCount').textContent = allUsers.length;
+    renderUsersTable(allUsers);
+  } catch (e) { toast('⚠ ' + e.message); }
+}
+
+function renderUsersTable(users) {
+  var tbody = document.getElementById('usersBody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:22px;color:var(--mu)">No users found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(function (u, i) {
+    var blockBtn = u.blocked
+      ? '<button class="act-btn unblock" onclick="toggleBlock(\'' + u.username + '\',true)">✅ Unblock</button>'
+      : '<button class="act-btn block" onclick="toggleBlock(\'' + u.username + '\',false)">🚫 Block</button>';
+    return '<tr>'
+      + '<td style="color:var(--mu);font-size:.7rem">' + (i + 1) + '</td>'
+      + '<td style="font-weight:600;color:var(--tx)">@' + u.username + '</td>'
+      + '<td style="color:var(--mu)">' + (u.email || '—') + '</td>'
+      + '<td>' + fDate(u.created) + '</td>'
+      + '<td>' + fAgo(u.lastLogin) + '</td>'
+      + '<td style="text-align:center">' + (u.loginCount || 1) + '</td>'
+      + '<td>' + (u.hasResume ? '<span class="badge green">✅</span>' : '<span class="badge mu">—</span>') + '</td>'
+      + '<td>' + (u.blocked ? '<span class="badge red">Blocked</span>' : '<span class="badge green">Active</span>') + '</td>'
+      + '<td>' + blockBtn + '<button class="act-btn danger" onclick="deleteUser(\'' + u.username + '\')">🗑 Delete</button></td>'
+      + '</tr>';
+  }).join('');
+}
+
+function filterUsers() {
+  var q = document.getElementById('userSearch').value.toLowerCase();
+  if (!q) { renderUsersTable(allUsers); return; }
+  renderUsersTable(allUsers.filter(function (u) {
+    return u.username.includes(q) || (u.email || '').toLowerCase().includes(q);
+  }));
+}
+
+async function toggleBlock(uname, isCurrentlyBlocked) {
+  var action = isCurrentlyBlocked ? 'Unblock' : 'Block';
+  confirm2(action + ' @' + uname + '?', isCurrentlyBlocked ? 'This will restore access.' : 'This will prevent the user from logging in.', async function () {
+    try {
+      const d = await api('POST', '/admin/block/' + uname);
+      if (d.success) { toast(d.message); loadUsers(); loadOverview(); }
+      else toast('⚠ ' + d.error);
+    } catch (e) { toast('⚠ ' + e.message); }
+  });
+}
+
+async function deleteUser(uname) {
+  confirm2('Delete @' + uname + '?', 'All their resume data will be permanently deleted. This cannot be undone.', async function () {
+    try {
+      const d = await api('DELETE', '/admin/user/' + uname);
+      if (d.success) { toast('🗑 @' + uname + ' deleted.'); loadUsers(); loadOverview(); }
+      else toast('⚠ ' + d.error);
+    } catch (e) { toast('⚠ ' + e.message); }
+  });
+}
+
+async function createUser() {
+  var uname = document.getElementById('newUname').value.trim();
+  var pw = document.getElementById('newPw').value;
+  var email = document.getElementById('newEmail').value.trim();
+  if (!uname || !pw) { toast('⚠ Username and password required'); return; }
+  try {
+    const d = await fetch(API_URL + '/api/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: uname, password: pw, email })
+    }).then(r => r.json());
+    if (d.success) {
+      toast('✅ User @' + uname + ' created!');
+      document.getElementById('newUname').value = '';
+      document.getElementById('newPw').value = '';
+      document.getElementById('newEmail').value = '';
+      loadUsers();
+    } else toast('⚠ ' + d.error);
+  } catch (e) { toast('⚠ ' + e.message); }
+}
+
+async function createTestUser() {
+  var uname = 'test_' + Math.random().toString(36).slice(2, 6);
+  try {
+    const d = await fetch(API_URL + '/api/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: uname, password: 'test1234' })
+    }).then(r => r.json());
+    if (d.success) { toast('✅ Test user @' + uname + ' created (pw: test1234)'); loadOverview(); }
+    else toast('⚠ ' + d.error);
+  } catch (e) { toast('⚠ ' + e.message); }
+}
+
+// ── BLOCKED ────────────────────────────────────────────────────
+async function loadBlocked() {
+  try {
+    const data = await api('GET', '/admin/users');
+    if (!data.users) return;
+    var blocked = data.users.filter(function (u) { return u.blocked; });
+    var tbody = document.getElementById('blockedBody');
+    if (!blocked.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:22px;color:var(--mu)">No blocked users.</td></tr>'; return; }
+    tbody.innerHTML = blocked.map(function (u) {
+      return '<tr>'
+        + '<td style="font-weight:600;color:var(--tx)">@' + u.username + '</td>'
+        + '<td style="color:var(--mu)">' + (u.email || '—') + '</td>'
+        + '<td>' + fDate(u.lastLogin) + '</td>'
+        + '<td><button class="act-btn unblock" onclick="toggleBlock(\'' + u.username + '\',true)">✅ Unblock</button>'
+        + '<button class="act-btn danger" onclick="deleteUser(\'' + u.username + '\')">🗑 Delete</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch (e) { toast('⚠ ' + e.message); }
+}
+
+// ── LOG ────────────────────────────────────────────────────────
+async function loadLog() {
+  try {
+    const data = await api('GET', '/admin/log');
+    var container = document.getElementById('logContainer');
+    if (!data.lines || !data.lines.length) { container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--mu);font-size:.78rem">No log entries yet.</div>'; return; }
+    container.innerHTML = data.lines.map(function (line) {
+      var parts = line.split(' | ');
+      if (parts.length >= 3) {
+        var ts = parts[0], act = parts[1], usr = parts[2];
+        return '<div class="log-entry"><span class="ts">' + ts + '</span>  <span class="act">' + act + '</span>  <span class="usr">' + usr + '</span>  ' + (parts[3] || '') + '</div>';
+      }
+      return '<div class="log-entry">' + line + '</div>';
+    }).join('');
+  } catch (e) { toast('⚠ ' + e.message); }
+}
+
+// ── API TESTER ─────────────────────────────────────────────────
+var currentMethod = 'GET';
+function toggleMethod() {
+  var methods = ['GET', 'POST', 'DELETE'];
+  var idx = methods.indexOf(currentMethod);
+  currentMethod = methods[(idx + 1) % methods.length];
+  document.getElementById('apiMethod').textContent = currentMethod;
+  document.getElementById('apiBody').style.display = (currentMethod === 'POST') ? 'block' : 'none';
+}
+function quickTest(method, endpoint) {
+  currentMethod = method;
+  document.getElementById('apiMethod').textContent = method;
+  document.getElementById('apiEndpoint').value = endpoint;
+  document.getElementById('apiBody').style.display = method === 'POST' ? 'block' : 'none';
+  runApiTest();
+}
+async function runApiTest() {
+  var endpoint = document.getElementById('apiEndpoint').value.trim();
+  var bodyTxt = document.getElementById('apiBodyTxt').value.trim();
+  var resultEl = document.getElementById('apiResult');
+  resultEl.style.display = 'block';
+  resultEl.textContent = 'Calling ' + currentMethod + ' ' + endpoint + '…';
+  try {
+    var opts = { method: currentMethod, headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY_VAL } };
+    if (currentMethod === 'POST' && bodyTxt) opts.body = bodyTxt;
+    var r = await fetch(API_URL + endpoint, opts);
+    var d = await r.json();
+    resultEl.textContent = 'HTTP ' + r.status + '\n\n' + JSON.stringify(d, null, 2);
+    resultEl.style.color = r.ok ? 'rgba(16,185,129,.9)' : '#fb7185';
+  } catch (e) {
+    resultEl.textContent = '❌ Error: ' + e.message;
+    resultEl.style.color = '#fb7185';
+  }
+}
+async function resetPw() {
+  var uname = document.getElementById('rpUser').value.trim();
+  var pw = document.getElementById('rpPw').value;
+  if (!uname || !pw) { toast('⚠ Username and new password required'); return; }
+  try {
+    const d = await api('POST', '/admin/reset-pw/' + uname, { newPassword: pw });
+    if (d.success) { toast('✅ Password reset for @' + uname); document.getElementById('rpUser').value = ''; document.getElementById('rpPw').value = ''; }
+    else toast('⚠ ' + d.error);
+  } catch (e) { toast('⚠ ' + e.message); }
+}
+
+// ── keyboard shortcut R to refresh ───────────────────────────
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshAll(); toast('🔄 Refreshed'); }
+});
+</script>
+</body>
+</html>
